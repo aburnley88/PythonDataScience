@@ -1,0 +1,89 @@
+ /*Query for 1st slide*/
+
+ SELECT c.name category
+       ,COUNT(*) AS rental_count
+ FROM category AS c
+ JOIN film_category AS fc
+ ON c.category_id = fc.category_id
+ AND c.name IN ('Animation'
+		   ,'Children'
+		   ,'Classics'
+		   ,'Comedy'
+		   ,'Family'
+		   ,'Music')
+ JOIN film AS f
+ ON f.film_id = fc.film_id
+ JOIN inventory AS i
+ ON f.film_id = i.film_id
+ JOIN rental AS r
+ ON i.inventory_id = r.inventory_id
+ GROUP BY 1
+	   ,2
+ ORDER BY 2
+	   ,1;
+ 
+ 
+/*Query for slide 2*/
+
+SELECT *,
+      NTILE(4) OVER(ORDER BY AVG(t1.rental_duration)) AS standard_quartile
+FROM (SELECT f.title, 
+	       c.name,
+	  	 f.rental_duration
+		FROM category AS c
+		JOIN film_category AS fc
+		ON c.category_id = fc.category_id 
+		AND c.name IN ('Animation', 
+                           'Children', 
+                           'Classics', 
+                           'Comedy', 
+                           'Family', 
+                           'Music')	
+          JOIN film AS f
+	    ON f.film_id = fc.film_id
+	    ORDER BY 2, 
+                   1) t1
+GROUP BY 1,
+         2,
+         3;
+
+/*Query for slide 3 */
+       
+	SELECT t.name,
+           t.standard_quartile,
+           COUNT(*)
+    FROM (SELECT c.name,
+                 f.rental_duration,
+                 NTILE(4) OVER(ORDER BY f.rental_duration) AS standard_quartile
+          FROM category AS c
+          JOIN film_category AS fc
+          ON c.category_id = fc.category_id 
+          AND c.name IN ('Animation', 
+                         'Children', 
+                         'Classics', 
+                         'Comedy', 
+                         'Family', 
+				 'Music')
+          JOIN film AS f
+          ON f.film_id = fc.film_id) AS t
+    GROUP BY 1, 
+		 2
+    ORDER BY 1, 
+             2;
+		
+/*Query for slide 4*/
+
+SELECT DATE_PART('month', r1.rental_date) AS rental_month, 
+       DATE_PART('year', r1.rental_date) AS rental_year,
+       ('Store ' || s1.store_id) AS store,
+       COUNT(*)
+FROM store AS s1
+       JOIN staff AS s2
+       ON s1.store_id = s2.store_id		
+       JOIN rental r1
+       ON s2.staff_id = r1.staff_id
+GROUP BY 1, 
+         2, 
+         3
+ORDER BY 2, 
+         1;
